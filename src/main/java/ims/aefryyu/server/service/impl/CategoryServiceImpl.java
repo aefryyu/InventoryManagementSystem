@@ -38,7 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Response getAllCategories() {
         List<Category> categories = categoryRepository.
-                findAll(Sort.by(Sort.Direction.DESC, "id"));
+                findByDeletedAtIsNull(Sort.by(Sort.Direction.DESC, "id"));
 
         List<CategoryDTO> categoryDTOs = modelMapper
                 .map(categories, new TypeToken<List<CategoryDTO>>() {}.getType());

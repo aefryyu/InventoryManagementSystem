@@ -1,5 +1,20 @@
 package ims.aefryyu.server.service.impl;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import ims.aefryyu.server.dto.LoginRequest;
 import ims.aefryyu.server.dto.RegisterRequest;
 import ims.aefryyu.server.dto.Response;
@@ -14,21 +29,6 @@ import ims.aefryyu.server.service.UserService;
 import io.github.bucket4j.Bucket;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
-import org.springframework.data.domain.Sort;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.UUID;
-
-import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 
 @Service
 @RequiredArgsConstructor
@@ -117,22 +117,23 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getCurrentLoggedUser() {
 
-        String userId = getCurrentLoggedUser().getId().toString();
-        Bucket bucket = rateLimiterService.resolveBucket("current:" + userId);
-
-        if (!bucket.tryConsume(1)) {
-            throw new ResponseStatusException(TOO_MANY_REQUESTS,"Too many login attempts. Try again later.");
-        }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("Unauthenticated");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
 
         String username = authentication.getName();
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // String userId = getCurrentLoggedUser().getId().toString();
+        // Bucket bucket = rateLimiterService.resolveBucket("current:" + userId);
+
+        // if (!bucket.tryConsume(1)) {
+        //     throw new ResponseStatusException(TOO_MANY_REQUESTS,"Too many login attempts. Try again later.");
+        // }
 
         user.setTransactions(null);
 

@@ -121,7 +121,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Response getAllProduct() {
-        List<Product> products = productRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
+        List<Product> products = productRepository.findByDeletedAtIsNull(Sort.by(Sort.Direction.DESC, "id"));
 
         List<ProductDTO> productDTOs = modelMapper.map(products, new TypeToken<List<ProductDTO>>() {}.getType());
 
